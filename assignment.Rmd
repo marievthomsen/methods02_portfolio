@@ -1,0 +1,167 @@
+---
+title: "Methods 2 -- Portfolio Assignment 1"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+- _Type:_ Group assignment
+- _Due:_ 5 March 2023, 23:59
+
+---
+
+Please submit your answers on GitHub Classroom
+
+*Assignment completed by*: Marie Vestergaard Thomsen, Hugo von Essen-Müller, Malene Jensen and Naja Mølle Lindelof
+
+---
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+```
+
+
+1. _(5.2 from ROS)_ __Continuous probability simulation:__ The logarithms of weights (in pounds) of men in the United States are approximately normally distributed with mean 5.13 and standard deviation 0.17; women’s log weights are approximately normally distributed with mean 4.96 and standard deviation 0.20. Suppose 10 adults selected at random step on an elevator with a capacity of 1750 pounds. What is the probability that their total weight exceeds this limit?
+(MVT)
+```{r}
+set.seed(111)
+# Parameters
+prob_male <- 0.48
+man_log_mean <- 5.13
+man_log_sd <- 0.17
+woman_log_mean <- 4.96
+woman_log_sd <- 0.20
+num_adults <- 10
+weight_capacity <- 1750
+
+# Simulating the process
+num_sims <- 1000
+total_weight <- rep(NA, num_sims)
+for (s in 1:num_sims) {
+    male <- rbinom(num_adults, 1, prob_male)
+    log_weight <- ifelse(
+        male == 1,
+        rnorm(num_adults, man_log_mean, man_log_sd),
+        rnorm(num_adults, woman_log_mean, woman_log_sd))
+    weight <- exp(log_weight)
+    total_weight[s] <- sum(weight)
+}
+
+# Creating histogram of distribution
+hist(total_weight, main="Distribution of weight of 10 adults", col = 'lightblue', xlab='Total Weight') 
+```
+(MVT, HVEM)
+```{r}
+# Probability that total weight exceeds
+length(Filter(function(w) { w > weight_capacity }, total_weight)) / num_sims
+```
+In this simulation, the total probability would hence be 4%
+
+---
+
+2. _(5.6 from ROS)_ __Propagation of uncertainty:__ We use a highly idealized setting to illustrate the use of simulations in combining uncertainties. Suppose a company changes its technology for widget production, and a study estimates the cost savings at \$5 per unit, but with a standard error of \$4. Furthermore, a forecast estimates the size of the market (that is, the number of widgets that will be sold) at 40 000, with a standard error of 10 000. Assuming these two sources of uncertainty are independent, use simulation to estimate the total amount of money saved by the new product (that is, savings per unit, multiplied by size of the market).
+
+(HVEM)
+```{r}
+# Parameters
+saving_per_unit <- 5
+saving_per_unit_se <- 4
+
+size_market <- 40000
+size_market_se <- 10000
+
+n_sims1 <- 10000
+
+# Simulations
+savings <- rnorm(n_sims1, saving_per_unit, saving_per_unit_se)
+market <- rnorm(n_sims1, size_market, size_market_se)
+
+total_savings <- savings*market
+
+# Estimation of what has been saved
+mean_total_savings <- mean(total_savings)
+mean_total_savings
+```
+
+---
+
+3. _(5.10 from ROS)_ __Inference for a ratio of parameters:__ A (hypothetical) study compares the costs and effectiveness of two different medical treatments.
+
+    - In the first part of the study, the difference in costs between treatments A and B is estimated at \$600 per patient, with a standard error of \$400, based on a regression with 50 degrees of freedom.
+    - In the second part of the study, the difference in effectiveness is estimated at 3.0 (on some relevant measure), with a standard error of 1.0, based on a regression with 100 degrees of freedom.
+    - For simplicity, assume that the data from the two parts of the study were collected independently.
+
+    Inference is desired for the incremental cost-effectiveness ratio: the difference between the average costs of the two treatments, divided by the difference between their average effectiveness, a problem discussed further by Heitjan, Moskowitz, and Whang (1999).
+
+    (a) Create 1000 simulation draws of the cost difference and the effectiveness difference, and make a scatterplot of these draws.
+
+(MJ)    
+```{r}
+set.seed(123)
+
+# Parameters
+cost_diff_mean <- 600
+cost_diff_se <- 400
+cost_samplesize <- 51
+
+eff_diff_mean <- 3
+eff_diff_se <- 1
+eff_samplesize <- 101
+
+n_sims <- 1000
+
+# Creating simulations
+cost_diff <- rnorm(n_sims, cost_diff_mean, cost_diff_se*sqrt(cost_samplesize))
+eff_diff <- rnorm(n_sims, eff_diff_mean, eff_diff_se*sqrt(eff_samplesize))
+
+# Scatterplot
+plot(x = eff_diff, y = cost_diff, xlab = "Efficiency Difference", ylab = "Cost Difference", main="")
+```
+
+    (b) Use simulation to come up with an estimate, 50% interval, and 95% interval for the incremental cost-effectiveness ratio.
+(MJ, NML)    
+```{r}
+ratio <- cost_diff/eff_diff
+
+ratio_percentiles <- quantile(ratio, c(0.5, 0.95))
+
+ratio_percentiles
+```
+
+
+    (c) Repeat, changing the standard error on the difference in effectiveness to 2.0.
+(NML)
+```{r}
+set.seed(123)
+
+# Parameters
+cost_diff_mean1 <- 600
+cost_diff_se1 <- 400
+cost_samplesize1 <- 51
+
+eff_diff_mean1 <- 3
+eff_diff_se1 <- 2
+eff_samplesize1 <- 101
+
+n_sims <- 1000
+
+# Simulations
+cost_diff1 <- rnorm(n_sims, cost_diff_mean1, cost_diff_se1*sqrt(cost_samplesize1))
+eff_diff1 <- rnorm(n_sims, eff_diff_mean1, eff_diff_se1*sqrt(eff_samplesize1))
+
+# Scatterplot
+plot(x = eff_diff1, y = cost_diff1, xlab = "Efficiency Difference", ylab = "Cost Difference")
+
+# Creating percentiles
+ratio1 <- cost_diff1/eff_diff1
+
+ratio_percentiles1 <- quantile(ratio1, c(0.5, 0.95))
+
+ratio_percentiles1
+```
+
+---
+
+
+
